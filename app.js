@@ -435,11 +435,15 @@ function usarMiUbicacion(){
         reporteUbicacion.lat=lat;reporteUbicacion.lng=lng;
         if(marcadorTemporal)map.removeLayer(marcadorTemporal);
         var icono=L.divIcon({className:'',html:'<div class="reporte-marker" style="background:#22c55e;">&#128205;</div>',iconSize:[28,28],iconAnchor:[14,14]});
-        marcadorTemporal=L.marker([lat,lng],{icon:icono}).addTo(map);
+        marcadorTemporal=L.marker([lat,lng],{icon:icono,draggable:true}).addTo(map);
+        marcadorTemporal.on('dragend',function(e){
+            var p=e.target.getLatLng();reporteUbicacion.lat=p.lat;reporteUbicacion.lng=p.lng;
+            document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+p.lat.toFixed(6)+', '+p.lng.toFixed(6)+'<\/b> <span style="color:#94a3b8;font-size:10px;">(arrastra para ajustar)<\/span>';
+        });
         map.setView([lat,lng],14);
         var box=document.getElementById('rep-ubicacion');
         box.classList.add('ubicado');box.classList.remove('seleccionando');
-        document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+lat.toFixed(6)+', '+lng.toFixed(6)+'</b>';
+        document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+lat.toFixed(6)+', '+lng.toFixed(6)+'<\/b> <span style="color:#94a3b8;font-size:10px;">(arrastra para ajustar)<\/span>';
         btn.disabled=false;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg> Mi ubicacion';
         seleccionandoUbicacion=false;
         restaurarInteractividadCapas();
@@ -461,10 +465,14 @@ map.on('click',function(e){
     reporteUbicacion.lat=e.latlng.lat;reporteUbicacion.lng=e.latlng.lng;
     if(marcadorTemporal)map.removeLayer(marcadorTemporal);
     var icono=L.divIcon({className:'',html:'<div class="reporte-marker" style="background:#ef4444;">&#128205;</div>',iconSize:[28,28],iconAnchor:[14,14]});
-    marcadorTemporal=L.marker(e.latlng,{icon:icono}).addTo(map);
+    marcadorTemporal=L.marker(e.latlng,{icon:icono,draggable:true}).addTo(map);
+    marcadorTemporal.on('dragend',function(ev){
+        var p=ev.target.getLatLng();reporteUbicacion.lat=p.lat;reporteUbicacion.lng=p.lng;
+        document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+p.lat.toFixed(6)+', '+p.lng.toFixed(6)+'</b> <span style="color:#94a3b8;font-size:10px;">(arrastra para ajustar)</span>';
+    });
     var box=document.getElementById('rep-ubicacion');
     box.classList.add('ubicado');box.classList.remove('seleccionando');
-    document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6)+'</b>';
+    document.getElementById('rep-ubicacion-texto').innerHTML='&#10003; <b>'+e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6)+'</b> <span style="color:#94a3b8;font-size:10px;">(arrastra para ajustar)</span>';
     seleccionandoUbicacion=false;
     restaurarInteractividadCapas();
     document.getElementById('btn-ubicacion').classList.remove('activo');
