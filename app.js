@@ -655,7 +655,7 @@ map.on('click',function(e){
     consultarAmenaza(e.latlng.lat,e.latlng.lng);
 });
 
-function usarMiUbicacion(){
+function usarMiUbicacionAmenaza(){
     if(!navigator.geolocation){
         alert('Tu navegador no soporta geolocalizacion.');
         return;
