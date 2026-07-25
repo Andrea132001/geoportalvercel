@@ -742,12 +742,36 @@ function mostrarReporteEnMapa(report){
     var icono=ICONOS_CATEGORIA[report.categoria]||'&#9888;';
     var icon=L.divIcon({className:'',html:'<div class="reporte-marker" style="background:'+color+';width:32px;height:32px;font-size:16px;">'+icono+'</div>',iconSize:[32,32],iconAnchor:[16,16]});
     var marker=L.marker(L.latLng(report.latitud,report.longitud),{icon:icon,zIndexOffset:1000}).addTo(capaReportes);
+    var estado=report.estado||'pendiente';
+    var estadoColor=estado==='completado'?'#16a34a':estado==='trabajando'?'#0284c7':'#f59e0b';
     var popupHtml='<div style="padding:12px 14px 10px;border-bottom:1px solid #edf0f4;font-family:Inter,sans-serif;"><span style="font-size:14px;font-weight:700;color:'+color+';">Reporte Ciudadano</span></div><div style="padding:8px 14px 12px;font-family:Inter,sans-serif;">';
     popupHtml+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;">Categoria</span><span style="color:#1a1a2e;font-size:12px;font-weight:500;">'+report.categoria+'</span></div>';
     if(report.nombre&&report.nombre!=='Anonimo')popupHtml+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;">Por</span><span style="color:#1a1a2e;font-size:12px;font-weight:500;">'+report.nombre+'</span></div>';
     if(report.descripcion)popupHtml+='<div style="padding:5px 0;"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;display:block;margin-bottom:3px;">Descripcion</span><span style="color:#1a1a2e;font-size:11px;line-height:1.4;">'+report.descripcion+'</span></div>';
-    popupHtml+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f1f5f9;margin-top:4px;"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;">Estado</span><span style="color:#f59e0b;font-size:11px;font-weight:600;">Pendiente</span></div></div>';
-    marker.bindPopup(popupHtml,{maxWidth:260,maxHeight:200});
+    popupHtml+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #f1f5f9;margin-top:4px;"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;">Estado</span><span style="color:'+estadoColor+';font-size:11px;font-weight:600;" id="estado-reporte-'+report.id+'">'+estado.charAt(0).toUpperCase()+estado.slice(1)+'</span></div>';
+    popupHtml+='<div style="display:flex;gap:4px;margin-top:8px;padding-top:6px;border-top:1px solid #f1f5f9;">';
+    popupHtml+='<button onclick="cambiarEstadoReporte('+report.id+',\'trabajando\')" style="flex:1;padding:5px 4px;font-size:9px;font-weight:600;border:1px solid #0284c7;background:#f0f9ff;color:#0284c7;border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'#0284c7\';this.style.color=\'white\';" onmouseout="this.style.background=\'#f0f9ff\';this.style.color=\'#0284c7\';">Trabajando</button>';
+    popupHtml+='<button onclick="cambiarEstadoReporte('+report.id+',\'completado\')" style="flex:1;padding:5px 4px;font-size:9px;font-weight:600;border:1px solid #16a34a;background:#f0fdf4;color:#16a34a;border-radius:6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'#16a34a\';this.style.color=\'white\';" onmouseout="this.style.background=\'#f0fdf4\';this.style.color=\'#16a34a\';">Completado</button>';
+    popupHtml+='</div></div>';
+    marker.bindPopup(popupHtml,{maxWidth:260,maxHeight:240});
+    marker._reportId=report.id;
+}
+
+async function cambiarEstadoReporte(id,nuevoEstado){
+    try{
+        var response=await fetch(SUPABASE_URL+'/rest/v1/reportes_ciudadanos?id=eq.'+id,{
+            method:'PATCH',
+            headers:{'apikey':API_KEY,'Authorization':'Bearer '+API_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+            body:JSON.stringify({estado:nuevoEstado})
+        });
+        if(!response.ok){console.error('Error actualizando estado:',await response.text());return;}
+        var el=document.getElementById('estado-reporte-'+id);
+        if(el){
+            var color=nuevoEstado==='completado'?'#16a34a':nuevoEstado==='trabajando'?'#0284c7':'#f59e0b';
+            el.style.color=color;
+            el.textContent=nuevoEstado.charAt(0).toUpperCase()+nuevoEstado.slice(1);
+        }
+    }catch(err){console.error('Error:',err);}
 }
 
 async function cargarReportesExistentes(){
