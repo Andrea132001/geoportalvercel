@@ -156,8 +156,10 @@ function actualizarResumen(){
     }
     var elF=document.getElementById('stat-features');
     var elC=document.getElementById('stat-capas');
+    var elT=document.getElementById('stat-tablas');
     if(elF)elF.textContent=featuresVisibles;
     if(elC)elC.textContent=capasVisibles;
+    if(elT)elT.textContent=CAPAS_CONFIG.length;
 }
 
 function inicializarUI(){
@@ -326,10 +328,10 @@ async function cargarTodasLasCapas(){
 
     if(totalErrores===0&&cargadas>0){
         statusBar.className='success';
-        statusBar.innerHTML='&#10003; '+cargadas+' capas cargadas | '+totalFeatures+' features';
+        statusBar.innerHTML='&#10003; <b>'+cargadas+'</b> capas activas | <b>'+totalFeatures+'</b> features | <b>5</b> tablas | <b>0</b> errores';
     }else{
         statusBar.className='error';
-        statusBar.innerHTML='&#9888; '+cargadas+' capas OK | '+totalErrores+' errores';
+        statusBar.innerHTML='&#9888; <b>'+cargadas+'</b> capas OK | <b>'+totalFeatures+'</b> features | <b>5</b> tablas | <b>'+totalErrores+'</b> errores';
     }
     setTimeout(function(){statusBar.className='';statusBar.textContent='';},6000);
 }
