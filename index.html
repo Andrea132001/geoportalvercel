@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geoportal - Amenaza por Lahar del Cotopaxi</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="styles.css?v=2.0.0"/>
+</head>
+<body>
+
+    <div id="header">
+        <div id="header-left">
+            <div id="header-logo">G</div>
+            <div>
+                <h1>Geoportal <span>Cotopaxi</span></h1>
+                <div id="header-sub">Zona de Amenaza por Lahar - Sistema de Informacion Geografica</div>
+            </div>
+        </div>
+        <div id="header-right">
+            <div class="meta">CRS: EPSG:4326 | WGS 84</div>
+            <div class="meta">Escala 1:25,000</div>
+            <div class="meta" id="cursor-coords">
+                <span id="coord-lat">Lat: -----</span> | <span id="coord-lon">Lon: -----</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-container">
+
+        <div id="sidebar">
+
+            <div class="panel" id="buscador-sidebar-panel">
+                <div class="panel-title">Busqueda de Features</div>
+                <div class="search-container">
+                    <div class="buscador-input-wrap">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" class="buscador-input" id="feature-search-input" placeholder="Canton, localidad, via, rio..."/>
+                    </div>
+                    <div class="buscador-results" id="feature-search-results"></div>
+                </div>
+            </div>
+
+            <div class="panel" id="filtro-sidebar-panel">
+                <div class="panel-title">Filtros Analiticos</div>
+                <div class="buscador-container" id="buscador-container">
+                    <div class="buscador-input-wrap">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" class="buscador-input" id="buscador-input" placeholder="Buscar territorio, canton, amenaza..."/>
+                        <span class="buscador-count" id="buscador-count"></span>
+                    </div>
+                    <div class="buscador-filtros" id="buscador-filtros">
+                        <span class="filtro-grupo-label">Tipo</span>
+                        <button class="filtro-chip" data-filtro="tipo" data-valor="Cantón">Cantón</button>
+                        <button class="filtro-chip" data-filtro="tipo" data-valor="Localidad">Localidad</button>
+                        <span class="filtro-separador"></span>
+                        <span class="filtro-grupo-label">Amenaza</span>
+                        <button class="filtro-chip" data-filtro="amenaza" data-valor="Mayor">Mayor</button>
+                        <button class="filtro-chip" data-filtro="amenaza" data-valor="Menor">Menor</button>
+                        <button class="filtro-chip" data-filtro="amenaza" data-valor="Sin amenaza">Sin amenaza</button>
+                        <span class="filtro-separador"></span>
+                        <span class="filtro-grupo-label">Exposicion</span>
+                        <button class="filtro-chip" data-filtro="categoria" data-valor="Baja">Baja</button>
+                        <button class="filtro-chip" data-filtro="categoria" data-valor="Media">Media</button>
+                        <button class="filtro-chip" data-filtro="categoria" data-valor="Alta">Alta</button>
+                        <button class="filtro-chip" data-filtro="categoria" data-valor="Muy alta">Muy alta</button>
+                    </div>
+                    <div class="buscador-results" id="buscador-results"></div>
+                </div>
+            </div>
+
+            <div class="panel-reporte-toggle panel-amenaza-toggle" id="panel-amenaza-toggle" onclick="toggleAmenaza()">
+                <div class="toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>&#191;Estoy en amenaza?</span>
+                </div>
+                <svg class="toggle-arrow" id="toggle-arrow-amenaza" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
+            <div class="panel-reporte-collapse panel-amenaza-collapse" id="panel-amenaza-collapse">
+                <div id="amenaza-resultado" class="amenaza-resultado">
+                    <div class="amenaza-placeholder">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span>Haz clic en el mapa para consultar</span>
+                    </div>
+                </div>
+                <div class="amenaza-botones">
+                    <button type="button" class="btn-amenaza-consultar" id="btn-amenaza-consultar" onclick="activarConsultaAmenaza()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        Seleccionar ubicacion
+                    </button>
+                    <button type="button" class="btn-amenaza-geo" id="btn-amenaza-geo" onclick="usarMiUbicacion()" title="Usar mi ubicacion">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+                        Mi ubicacion
+                    </button>
+                </div>
+                <button type="button" class="btn-amenaza-pdf" id="btn-amenaza-pdf" style="display:none;" onclick="descargarAmenazaPDF()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Descargar PDF
+                </button>
+            </div>
+
+            <div class="panel-reporte-toggle" id="panel-reporte-toggle" onclick="toggleFormularioReporte()">
+                <div class="toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>Reportar Problema</span>
+                </div>
+                <svg class="toggle-arrow" id="toggle-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
+            <div class="panel-reporte-collapse" id="panel-reporte-collapse">
+
+                <div id="reporte-msg" class="reporte-msg hidden"></div>
+
+                <div id="reporte-form">
+                    <div class="form-group">
+                        <label class="form-label">Tu nombre</label>
+                        <input type="text" class="form-input" id="rep-nombre" placeholder="Opcional"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Categoria *</label>
+                        <select class="form-select" id="rep-categoria">
+                            <option value="">Seleccionar problema...</option>
+                            <option value="Baches">Baches en viales</option>
+                            <option value="Alumbrado">Alumbrado publico</option>
+                            <option value="Basura">Basura / Residuos</option>
+                            <option value="Agua">Agua potable</option>
+                            <option value="Alcantarillado">Alcantarillado</option>
+                            <option value="Parques">Parques y jardines</option>
+                            <option value="Inundacion">Inundacion</option>
+                            <option value="Animales">Animales abandonados</option>
+                            <option value="Seguridad">Seguridad</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripcion</label>
+                        <textarea class="form-textarea" id="rep-descripcion"
+                            placeholder="Describe el problema..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ubicacion en el mapa</label>
+                        <div id="rep-ubicacion" class="ubicacion-box">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span id="rep-ubicacion-texto">Haz clic en el mapa para ubicar</span>
+                        </div>
+                        <div class="btn-ubicacion-row">
+                            <button type="button" class="btn-ubicacion" id="btn-ubicacion" onclick="activarSeleccionUbicacion()">
+                                Seleccionar ubicacion
+                            </button>
+                            <button type="button" class="btn-ubicacion btn-mi-ubicacion" id="btn-mi-ubicacion" onclick="usarMiUbicacion()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+                                Mi ubicacion
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-enviar" id="btn-enviar" onclick="enviarReporte()">
+                        Enviar Reporte
+                    </button>
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-rep" onclick="cancelarReporte()">
+                        Cancelar
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="panel-reporte-toggle panel-exposicion-toggle" id="panel-exposicion-toggle" onclick="toggleFormularioExposicion()">
+                <div class="toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>Reportar Exposicion</span>
+                </div>
+                <svg class="toggle-arrow" id="toggle-arrow-exp" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
+            <div class="panel-reporte-collapse" id="panel-exposicion-collapse">
+
+                <div id="exposicion-msg" class="reporte-msg hidden"></div>
+
+                <div id="exposicion-form">
+                    <div class="form-group">
+                        <label class="form-label">Tu nombre</label>
+                        <input type="text" class="form-input" id="exp-nombre" placeholder="Opcional"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tipo de evento *</label>
+                        <select class="form-select" id="exp-tipo-evento">
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="Lahar">Lahar</option>
+                            <option value="Desbordamiento de rio">Desbordamiento de rio</option>
+                            <option value="Obstruccion de cauce">Obstruccion de cauce</option>
+                            <option value="Dano en via">Dano en via</option>
+                            <option value="Deslizamiento">Deslizamiento</option>
+                            <option value="Caida de ceniza">Caida de ceniza</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripcion</label>
+                        <textarea class="form-textarea" id="exp-descripcion"
+                            placeholder="Describe lo que observaste..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nivel de afectacion *</label>
+                        <select class="form-select" id="exp-nivel">
+                            <option value="Baja">Baja</option>
+                            <option value="Media" selected>Media</option>
+                            <option value="Alta">Alta</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha de observacion</label>
+                        <input type="date" class="form-input" id="exp-fecha-obs"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ubicacion en el mapa</label>
+                        <div id="exp-ubicacion" class="ubicacion-box">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span id="exp-ubicacion-texto">Haz clic en el mapa para ubicar</span>
+                        </div>
+                        <div class="btn-ubicacion-row">
+                            <button type="button" class="btn-ubicacion btn-exp-ubicacion" id="btn-exp-ubicacion" onclick="activarSeleccionExposicion()">
+                                Seleccionar ubicacion
+                            </button>
+                            <button type="button" class="btn-ubicacion btn-mi-ubicacion" id="btn-exp-mi-ubicacion" onclick="usarMiUbicacionExposicion()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+                                Mi ubicacion
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-enviar btn-enviar-exp" id="btn-exp-enviar" onclick="enviarExposicion()">
+                        Enviar Reporte de Exposicion
+                    </button>
+                    <button type="button" class="btn-cancelar" id="btn-cancelar-exp" onclick="cancelarExposicion()">
+                        Cancelar
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="panel-toggle" id="panel-indicadores-toggle" onclick="togglePanelIndicadores()">
+                <div class="toggle-left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    <span>Indicadores</span>
+                </div>
+                <svg class="toggle-arrow" id="toggle-arrow-ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
+            <div class="panel-collapse" id="panel-indicadores">
+                <div class="panel-ind-body" id="panel-ind-body">
+                    <div class="panel-ind-loading" id="panel-ind-loading">
+                        <div class="spinner-ind"></div>
+                        <span>Cargando indicadores...</span>
+                    </div>
+                </div>
+                <div class="panel-ind-footer">
+                    <div class="panel-ind-footer-btns">
+                        <button class="btn-actualizar" id="btn-actualizar" onclick="cargarIndicadores()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Actualizar
+                        </button>
+                        <button class="btn-exportar-pdf" id="btn-exportar-pdf" onclick="exportarPDF()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            Exportar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOGGLE: Descargar Reportes -->
+            <div class="panel-toggle panel-toggle-descarga" id="panel-descarga-toggle" onclick="togglePanelDescarga()">
+                <div class="toggle-left">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Descargar Reportes</span>
+                </div>
+                <svg class="toggle-arrow" id="toggle-arrow-descarga" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+
+            <!-- COLLAPSE: Descargar Reportes -->
+            <div class="panel-collapse" id="panel-descarga">
+                <div class="panel-desc-body">
+                    <p class="panel-desc-intro">Descarga los reportes almacenados en la base de datos en formato PDF.</p>
+                    <button class="btn-descargar" onclick="descargarReportesCiudadanos()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Reportes Ciudadanos
+                    </button>
+                    <button class="btn-descargar" onclick="descargarReportesExposicion()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Reportes de Exposicion
+                    </button>
+                    <button class="btn-descargar btn-descargar-todos" onclick="descargarTodosLosReportes()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Todos los Reportes
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel panel-acerca">
+                <div class="panel-title">Acerca del geoportal</div>
+                <div class="acerca-texto">
+                    <p>El Geoportal de Amenazas Naturales del volcán Cotopaxi permite visualizar y consultar información espacial relacionada con zonas de amenaza por lahares y elementos expuestos dentro del área de estudio.</p>
+                    <p>La plataforma integra información geoespacial, consultas espaciales y generación automática de reportes para facilitar el análisis territorial y la toma de decisiones.</p>
+                </div>
+                <div class="acerca-info">
+                    <div class="acerca-info-titulo">Información disponible:</div>
+                    <ul class="acerca-lista">
+                        <li>Zonas de amenaza por lahares.</li>
+                        <li>Centros poblados.</li>
+                        <li>Red vial.</li>
+                        <li>Red hídrica.</li>
+                        <li>Límites administrativos.</li>
+                        <li>Reportes ciudadanos y de exposición.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Capas</div>
+                <div id="capas-panel-list"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Resumen</div>
+                <div class="info-stats">
+                    <div class="stat-box">
+                        <div class="stat-number" id="stat-features">0</div>
+                        <div class="stat-label">Features</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="stat-capas">0</div>
+                        <div class="stat-label">Capas activas</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="stat-tablas">5</div>
+                        <div class="stat-label">Tablas</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="stat-errores">0</div>
+                        <div class="stat-label">Errores</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Leyenda</div>
+                <div id="legend-content"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Metadatos</div>
+                <div class="meta-list">
+                    <div><span class="meta-k">Fuente:</span> Supabase PostgREST</div>
+                    <div><span class="meta-k">CRS:</span> EPSG:4326 - WGS84</div>
+                    <div><span class="meta-k">Motor:</span> Leaflet 1.9.4</div>
+                    <div><span class="meta-k">Capas:</span> 5 disponibles</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="map-container">
+            <div id="map"></div>
+
+            <div class="basemap-switcher">
+                <button class="basemap-btn active" data-basemap="claro">Claro</button>
+                <button class="basemap-btn" data-basemap="satelital">Satelital</button>
+                <button class="basemap-btn" data-basemap="oscuro">Oscuro</button>
+            </div>
+
+            <div id="loading-overlay" class="hidden">
+                <div class="spinner"></div>
+                <div class="loading-text">Cargando capas</div>
+                <div class="loading-sub">Conectando con Supabase...</div>
+            </div>
+            <div id="status-bar"></div>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js?v=2.0.0"></script>
+
+</body>
+</html>
